@@ -26,6 +26,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionAudio,SIGNAL(triggered()),this,SLOT(AudioSetting()));
     connect(ui->actionAide,SIGNAL(triggered()),this,SLOT(Help()));
     connect(ui->actionA_propos,SIGNAL(triggered()),this,SLOT(Credits()));
+    connect(ui->actionAffichageStatistics,SIGNAL(triggered()),this,SLOT(Statistics()));
 }
 
 MainWindow::~MainWindow()
@@ -42,9 +43,27 @@ void MainWindow::BeginPartySolo()
 
 void MainWindow::BeginPartyMulti()
 {
-    QMessageBox msg;
-    msg.setText("Vous venez de lancer une partie multi.");
-    msg.exec();
+    etatServeur = new QLabel;
+
+         QVBoxLayout *layout = new QVBoxLayout;
+         layout->addWidget(etatServeur);
+        setLayout(layout);
+
+        //  Gestion du serveur
+         serveur = new QTcpServer(this);
+         if (!serveur->listen(QHostAddress::Any, 60000)) // Demarrage du serveur sur toutes les IP disponibles et sur le port 60000
+         {
+             // Si le serveur n'a pas ete demarre correctement
+             etatServeur->setText(tr("Le serveur n'a pas pu etre demarre. Raison :<br />") + serveur->errorString());
+         }
+         else
+         {
+             // Si le serveur a ete demarre correctement
+             QMessageBox msg;
+             msg.setText(tr("Vous venez de lancer une partie multi.<br>") + tr("Le serveur à été demarré sur le port <strong>") + QString::number(serveur->serverPort()) + tr("</strong>.<br />Des clients peuvent maintenant se connecter."));
+             msg.exec();
+     }
+
 }
 
 void MainWindow::LoadPartySolo()
@@ -100,9 +119,20 @@ void MainWindow::AudioSetting()
 
 void MainWindow::Help()
 {
-    QMessageBox msg;
-    msg.setText("Vous venez d'ouvrir les configurations audio.");
-    msg.exec();
+
+    QString texte;
+    QFile fichier("C:\Users\Petulka\Bomberman\HelpFichier.txt");
+    if(fichier.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+         texte = fichier.readAll();
+       QMessageBox msgHelp;
+        msgHelp.setGeometry(10,100,400,200);
+        msgHelp.information(this, "Fichier d'aide : ", texte);
+
+
+         fichier.close();
+    }
+    else texte = "Impossible d'ouvrir le fichier !";
 }
 
 void MainWindow::Credits()
@@ -111,4 +141,32 @@ void MainWindow::Credits()
     msg.setText("Vous venez d'ouvrir les configurations audio.");
     msg.exec();
 }
+
+void MainWindow::Statistics()
+ {
+     QString texte;
+     QFile fichier("C:\Users\Petulka\Bomberman\1.txt");
+     if(fichier.open(QIODevice::ReadOnly | QIODevice::Text))
+     {
+          texte = fichier.readAll();
+        QMessageBox msgStatistics;
+         msgStatistics.setGeometry(10,100,400,200);
+         msgStatistics.information(this, "Statistiques du joueur", texte);
+
+
+          fichier.close();
+     }
+     else texte = "Impossible d'ouvrir le fichier !";
+ }
+
+void MainWindow::nouvelleConnexion()
+ {
+     // Gestion des connections clients et de port dans un tableau
+     QTcpSocket *nouveauClient = serveur->nextPendingConnection();
+     clients << nouveauClient;
+
+ }
+
+
+
 
